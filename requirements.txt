@@ -1,2 +1,3 @@
 # Congela aquí tus dependencias. Ejemplo:
 # requests==2.32.3
+Flask
