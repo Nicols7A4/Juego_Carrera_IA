@@ -1,0 +1,33 @@
+pathfinding_race/
+├── main.py                 # 🏁 Punto de entrada principal. Inicia Pygame y el gestor del juego.
+├── config.py               # ⚙️ Configuraciones globales (colores, tamaño de ventana, FPS).
+├── requirements.txt        # 📦 Dependencias del proyecto (ej. pygame).
+│
+├── assets/
+│   ├── maps/
+│   │   └── default_map.json # 🗺️ Mapas guardados en formato JSON.
+│   └── fonts/
+│       └── B612Mono-Regular.ttf # ✍️ Fuentes de texto.
+│
+├── algorithms/
+│   ├── __init__.py
+│   ├── pathfinder_base.py  # 뼈대 Interfaz común para todos los algoritmos.
+│   ├── a_star.py           # ⭐ Implementación de A*.
+│   └── dijkstra.py         # 💡 Implementación de Dijkstra.
+│
+├── components/
+│   ├── __init__.py
+│   ├── grid.py             # ▦ Lógica y dibujado de la cuadrícula del mapa.
+│   ├── button.py           # 🔘 Clase reutilizable para botones del menú.
+│   └── agent.py            # 🚗 Representa a un corredor (IA o Humano).
+│
+├── scenes/
+│   ├── __init__.py
+│   ├── scene_base.py       # 🎬 Clase base para todas las "escenas" o pantallas del juego.
+│   ├── menu_scene.py       # 🏠 Escena del menú principal.
+│   ├── editor_scene.py     # ✏️ Escena para crear y editar mapas.
+│   ├── testing_scene.py    # 🔬 Escena de prueba y visualización de algoritmos.
+│   └── race_scene.py       # 🏎️ Escena de carrera (IA vs IA y IA vs Humano).
+│
+└── utils/
+    └── map_manager.py      # 💾 Funciones para cargar y guardar mapas (manejo de JSON).

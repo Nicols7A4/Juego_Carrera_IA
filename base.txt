@@ -1,0 +1,148 @@
+import pygame
+import sys
+import config # Importamos nuestro archivo de configuración
+
+class Game:
+    def __init__(self):
+        pygame.init()
+        self.screen = pygame.display.set_mode((config.SCREEN_WIDTH, config.SCREEN_HEIGHT))
+        pygame.display.set_caption(config.TITLE)
+        self.clock = pygame.time.Clock()
+        self.running = True
+
+    def run(self):
+        """Bucle principal del juego."""
+        while self.running:
+            self.handle_events()
+            self.update()
+            self.draw()
+            self.clock.tick(config.FPS)
+
+        pygame.quit()
+        sys.exit()
+
+    def handle_events(self):
+        """Maneja los eventos de entrada (teclado, mouse)."""
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+
+    def update(self):
+        """Actualiza la lógica del juego."""
+        # Por ahora no hace nada
+        pass
+
+    def draw(self):
+        """Dibuja todo en la pantalla."""
+        self.screen.fill(config.GRAY) # Rellenamos el fondo con un color
+        pygame.display.flip() # Actualiza la pantalla completa para mostrar lo dibujado
+
+# --- Punto de entrada del programa ---
+if __name__ == '__main__':
+    game = Game()
+    game.run()
+
+
+
+
+
+
+
+#############################################
+#############################################
+#############################################
+#############################################
+
+
+import pygame
+import sys
+import config # Importamos nuestro archivo de configuración
+from components.grid import Grid # <-- 1. IMPORTAMOS LA CLASE GRID
+
+class Game:
+    def __init__(self):
+        pygame.init()
+        self.screen = pygame.display.set_mode((config.SCREEN_WIDTH, config.SCREEN_HEIGHT))
+        pygame.display.set_caption(config.TITLE)
+        self.clock = pygame.time.Clock()
+        self.running = True
+        
+        self.grid = Grid()
+        # ¡Cargamos nuestro mapa por defecto!
+        self.grid.load_map('assets/maps/default_map.json')
+
+    def run(self):
+        """Bucle principal del juego."""
+        while self.running:
+            self.handle_events()
+            self.update()
+            self.draw()
+            self.clock.tick(config.FPS)
+
+        pygame.quit()
+        sys.exit()
+
+    def handle_events(self):
+        """Maneja los eventos de entrada (teclado, mouse)."""
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+
+    def update(self):
+        """Actualiza la lógica del juego."""
+        # Por ahora no hace nada
+        pass
+
+    def draw(self):
+        """Dibuja todo en la pantalla."""
+        self.screen.fill(config.GRAY)
+        self.grid.draw(self.screen) # <-- 3. DIBUJAMOS LA GRID EN LA PANTALLA
+        pygame.display.flip() # Actualiza la pantalla completa para mostrar lo dibujado
+
+# --- Punto de entrada del programa ---
+if __name__ == '__main__':
+    game = Game()
+    game.run()
+
+
+
+
+
+###################################################
+###################################################
+###################################################
+
+
+import pygame
+import config
+from scenes.scene_base import SceneBase
+
+class MenuScene(SceneBase):
+    def __init__(self, game):
+        super().__init__(game)
+        self.font = pygame.font.SysFont('B612Mono', 60) # Usa una fuente que tengas o SysFont
+
+    def handle_events(self, events):
+        for event in events:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
+                # Por ahora, al presionar Enter, cerramos el juego.
+                # Más adelante, esto cambiará a otra escena.
+                self.game.running = False
+
+    def update(self):
+        # El menú no tiene lógica que actualizar por sí mismo.
+        pass
+
+    def draw(self, screen):
+        screen.fill(config.GRAY)
+        
+        # Dibuja el título
+        title_text = self.font.render('Pathfinding Race AI', True, config.WHITE)
+        text_rect = title_text.get_rect(center=(config.SCREEN_WIDTH / 2, config.SCREEN_HEIGHT / 3))
+        screen.blit(title_text, text_rect)
+
+        # Dibuja una instrucción
+        info_font = pygame.font.SysFont('B612Mono', 30)
+        info_text = info_font.render('Presiona ENTER para continuar', True, config.WHITE)
+        info_rect = info_text.get_rect(center=(config.SCREEN_WIDTH / 2, config.SCREEN_HEIGHT / 2))
+        screen.blit(info_text, info_rect)
