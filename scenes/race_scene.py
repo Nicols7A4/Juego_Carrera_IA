@@ -40,6 +40,10 @@ class RaceScene(SceneBase):
         self.player_finish_time = 0
         self.ai_finish_time = 0
         self.race_time = 0
+        
+        # --- NUEVO: Variables para movimiento continuo del jugador ---
+        self.player_move_speed = 0.12  # Velocidad de movimiento del jugador (segundos entre movimientos)
+        self.player_move_timer = 0
 
     def on_enter(self):
         self.grid.load_map(self.game.selected_map)
@@ -51,6 +55,7 @@ class RaceScene(SceneBase):
         
         self.ai_move_speed = 0.15
         self.ai_move_timer = 0
+        self.ai_path_index = 1  # Inicializar el índice del camino de la IA
         
         self.switch_algorithm(initial_setup=True) # Configura el estado inicial sin reiniciar
 
@@ -111,6 +116,7 @@ class RaceScene(SceneBase):
         self.player_finish_time = 0
         self.ai_finish_time = 0
         self.race_time = 0
+        self.player_move_timer = 0  # Reiniciar también el temporizador del jugador
 
         if self.grid.start_pos:
             self.ai.position = self.grid.start_pos
@@ -138,35 +144,52 @@ class RaceScene(SceneBase):
                 self.switch_algo_button.handle_event(event)
                 self.diagonal_button.handle_event(event)
 
-            # El jugador solo se puede mover si la carrera ha empezado y no hay ganador
-            if self.race_started and not self.winner_text:
-                if event.type == pygame.KEYDOWN:
-                    # Movimientos básicos
-                    if event.key == pygame.K_UP:
-                        self.player.move(0, -1, self.grid)
-                    elif event.key == pygame.K_DOWN:
-                        self.player.move(0, 1, self.grid)
-                    elif event.key == pygame.K_LEFT:
-                        self.player.move(-1, 0, self.grid)
-                    elif event.key == pygame.K_RIGHT:
-                        self.player.move(1, 0, self.grid)
-                    # Movimientos diagonales (si están habilitados)
-                    elif self.allow_diagonal:
-                        if event.key == pygame.K_q:  # Diagonal arriba-izquierda
-                            self.player.move(-1, -1, self.grid)
-                        elif event.key == pygame.K_e:  # Diagonal arriba-derecha
-                            self.player.move(1, -1, self.grid)
-                        elif event.key == pygame.K_z:  # Diagonal abajo-izquierda
-                            self.player.move(-1, 1, self.grid)
-                        elif event.key == pygame.K_c:  # Diagonal abajo-derecha
-                            self.player.move(1, 1, self.grid)
-
     def update(self, dt):
         """Mueve la IA y comprueba si hay un ganador."""
         if not self.race_started or self.winner_text: return
 
         # Actualizar tiempo de carrera
         self.race_time = pygame.time.get_ticks() / 1000.0 - self.race_start_time
+
+        # Manejar movimiento continuo del jugador
+        if not self.player.finished:
+            self.player_move_timer += dt
+            if self.player_move_timer >= self.player_move_speed:
+                keys = pygame.key.get_pressed()
+                moved = False
+                
+                # Movimientos básicos
+                if keys[pygame.K_UP]:
+                    self.player.move(0, -1, self.grid)
+                    moved = True
+                elif keys[pygame.K_DOWN]:
+                    self.player.move(0, 1, self.grid)
+                    moved = True
+                elif keys[pygame.K_LEFT]:
+                    self.player.move(-1, 0, self.grid)
+                    moved = True
+                elif keys[pygame.K_RIGHT]:
+                    self.player.move(1, 0, self.grid)
+                    moved = True
+                # Movimientos diagonales (si están habilitados)
+                elif self.allow_diagonal:
+                    self.player_move_speed = 0.1
+                    if keys[pygame.K_q]:  # Diagonal arriba-izquierda
+                        self.player.move(-1, -1, self.grid)
+                        moved = True
+                    elif keys[pygame.K_e]:  # Diagonal arriba-derecha
+                        self.player.move(1, -1, self.grid)
+                        moved = True
+                    elif keys[pygame.K_z]:  # Diagonal abajo-izquierda
+                        self.player.move(-1, 1, self.grid)
+                        moved = True
+                    elif keys[pygame.K_c]:  # Diagonal abajo-derecha
+                        self.player.move(1, 1, self.grid)
+                        moved = True
+                
+                # Solo reiniciar el temporizador si se movió
+                if moved:
+                    self.player_move_timer = 0
 
         # Mover la IA
         if not self.ai.finished and self.ai.path:
