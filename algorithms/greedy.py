@@ -99,7 +99,7 @@ class GreedyPathfinder(PathfinderBase):
         self.nodo_fin = Nodo(None, end_pos)
         
         # Calcular heurística inicial
-        self.nodo_inicio.h = self._calcular_heuristica(self.nodo_inicio.posicion, end_pos)
+        self.nodo_inicio.h = self.calcular_heuristica(self.nodo_inicio.posicion, end_pos)
         self.nodo_inicio.f = self.nodo_inicio.h  # En voraz, f = h
         
         self.lista_abierta = [self.nodo_inicio]
@@ -137,10 +137,6 @@ class GreedyPathfinder(PathfinderBase):
         self._procesar_vecinos(nodo_actual)
         return True
     
-    def _calcular_heuristica(self, pos1, pos2):
-        """Calcula la distancia euclidiana como heurística."""
-        return ((pos1[0] - pos2[0]) ** 2) + ((pos1[1] - pos2[1]) ** 2)
-    
     def _procesar_vecinos(self, nodo_actual):
         """Procesa los vecinos del nodo actual usando la funcionalidad de la clase base."""
         vecinos_con_costos = self.get_neighbors_and_costs(nodo_actual.posicion)
@@ -157,7 +153,7 @@ class GreedyPathfinder(PathfinderBase):
                 continue
 
             # Calcular solo la heurística (característica del algoritmo voraz)
-            vecino.h = self._calcular_heuristica(vecino.posicion, self.nodo_fin.posicion)
+            vecino.h = self.calcular_heuristica(vecino.posicion, self.nodo_fin.posicion)
             vecino.f = vecino.h  # En voraz, f = h (solo heurística)
             vecino.g = nodo_actual.g + vecino.move_cost  # Mantener registro del costo real para reconstrucción
 
@@ -189,10 +185,6 @@ class GreedyPathfinder(PathfinderBase):
     @property
     def find_path(self):
         return self.buscar_camino
-    
-    @property
-    def _calculate_heuristic(self):
-        return self._calcular_heuristica
     
     @property
     def _process_neighbors(self):

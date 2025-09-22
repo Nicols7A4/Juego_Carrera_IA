@@ -144,8 +144,7 @@ class AStarPathfinder(PathfinderBase):
                 continue
 
             vecino.g = nodo_actual.g + vecino.costo_movimiento
-            vecino.h = ((vecino.posicion[0] - self.nodo_final.posicion[0]) ** 2) + \
-                       ((vecino.posicion[1] - self.nodo_final.posicion[1]) ** 2)
+            vecino.h = self.calcular_heuristica(vecino.posicion, self.nodo_final.posicion)
             vecino.f = vecino.g + vecino.h
 
             if any(nodo_abierto for nodo_abierto in self.lista_abierta if vecino == nodo_abierto and vecino.g >= nodo_abierto.g):

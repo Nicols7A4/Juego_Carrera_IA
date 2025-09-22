@@ -56,6 +56,26 @@ class PathfinderBase:
         import config
         return config.STATE_OBSTACLE
     
+    def calcular_heuristica(self, pos1, pos2):
+        """
+        Calcula la heurística apropiada según el tipo de movimiento permitido.
+        - Si permite diagonal: usa distancia diagonal (Chebyshev modificada)
+        - Si no permite diagonal: usa distancia Manhattan
+        """
+        import math
+        
+        dx = abs(pos1[0] - pos2[0])
+        dy = abs(pos1[1] - pos2[1])
+        
+        if self.allow_diagonal:
+            # Distancia diagonal: combina movimientos diagonales y rectos
+            # Costo diagonal = sqrt(2), costo recto = 1
+            # Fórmula: max(dx, dy) + (sqrt(2) - 1) * min(dx, dy)
+            return max(dx, dy) + (math.sqrt(2) - 1) * min(dx, dy)
+        else:
+            # Distancia Manhattan para movimiento solo ortogonal
+            return dx + dy
+    
     # Propiedades para compatibilidad con código existente
     @property
     def iterations(self):
@@ -64,6 +84,10 @@ class PathfinderBase:
     @iterations.setter
     def iterations(self, valor):
         self.iteraciones = valor
+    
+    @property
+    def calculate_heuristic(self):
+        return self.calcular_heuristica
 
     def find_path(self, start_pos, end_pos):
         """
