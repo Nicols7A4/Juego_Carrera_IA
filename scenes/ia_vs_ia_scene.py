@@ -108,6 +108,8 @@ class IAvsIAScene(SceneBase):
         self.ai2 = None
         self.ai1_nodes_expanded = 0
         self.ai2_nodes_expanded = 0
+        self.ai1_iterations = 0
+        self.ai2_iterations = 0
     
     def _create_algorithm_buttons(self):
         """Crea los botones para selección de algoritmos."""
@@ -117,7 +119,7 @@ class IAvsIAScene(SceneBase):
         
         # Botones para el algoritmo 1 (lado izquierdo)
         self.algo1_buttons = []
-        start_y = 170  # Más espacio desde arriba
+        start_y = 190  # Más espacio desde arriba para las estadísticas
         for i, (algo_id, algo_name) in enumerate(AVAILABLE_ALGORITHMS):
             button = Button(
                 self.offset1[0], 
@@ -180,11 +182,13 @@ class IAvsIAScene(SceneBase):
         self.ai1 = Agent(start, (255, 128, 0)) # Naranja
         self.ai1.path = self.pathfinder1.find_path(start, self.grid1.end_pos)
         self.ai1_nodes_expanded = len(self.pathfinder1.closed_list)
+        self.ai1_iterations = self.pathfinder1.iterations
         
         # Configurar IA 2 (segundo algoritmo)
         self.ai2 = Agent(start, (0, 191, 255)) # Celeste
         self.ai2.path = self.pathfinder2.find_path(start, self.grid2.end_pos)
         self.ai2_nodes_expanded = len(self.pathfinder2.closed_list)
+        self.ai2_iterations = self.pathfinder2.iterations
 
         # Control de tiempo para la animación
         self.move_speed = 0.05
@@ -214,6 +218,8 @@ class IAvsIAScene(SceneBase):
         self.ai2 = None
         self.ai1_nodes_expanded = 0
         self.ai2_nodes_expanded = 0
+        self.ai1_iterations = 0
+        self.ai2_iterations = 0
 
     def update(self, dt):
         """Actualiza la lógica de la escena."""
@@ -320,11 +326,15 @@ class IAvsIAScene(SceneBase):
             self.ai2.draw(screen, self.offset2)
 
             # Dibujar estadísticas cuando la carrera ha comenzado
-            stats1 = self.font_stats.render(f"Nodos: {self.ai1_nodes_expanded} Pasos: {len(self.ai1.path or [])-1}", True, config.WHITE)
-            screen.blit(stats1, (self.offset1[0], 35))
+            stats1_line1 = self.font_stats.render(f"Nodos: {self.ai1_nodes_expanded} | Pasos: {len(self.ai1.path or [])-1}", True, config.WHITE)
+            stats1_line2 = self.font_stats.render(f"Iteraciones: {self.ai1_iterations}", True, config.WHITE)
+            screen.blit(stats1_line1, (self.offset1[0], 35))
+            screen.blit(stats1_line2, (self.offset1[0], 55))
 
-            stats2 = self.font_stats.render(f"Nodos: {self.ai2_nodes_expanded} Pasos: {len(self.ai2.path or [])-1}", True, config.WHITE)
-            screen.blit(stats2, (self.offset2[0], 35))
+            stats2_line1 = self.font_stats.render(f"Nodos: {self.ai2_nodes_expanded} | Pasos: {len(self.ai2.path or [])-1}", True, config.WHITE)
+            stats2_line2 = self.font_stats.render(f"Iteraciones: {self.ai2_iterations}", True, config.WHITE)
+            screen.blit(stats2_line1, (self.offset2[0], 35))
+            screen.blit(stats2_line2, (self.offset2[0], 55))
 
         # Dibujar títulos de los algoritmos seleccionados
         algo1_display = get_algorithm_display_name(self.algo1_name)
@@ -342,7 +352,7 @@ class IAvsIAScene(SceneBase):
         if not self.race_started:
             # Instrucciones
             instruction_text = self.font_stats.render("Selecciona los algoritmos y presiona COMENZAR", True, config.WHITE)
-            text_rect = instruction_text.get_rect(center=(config.SCREEN_WIDTH // 2, 140))
+            text_rect = instruction_text.get_rect(center=(config.SCREEN_WIDTH // 2, 160))
             screen.blit(instruction_text, text_rect)
             
             # Dibujar botones de selección de algoritmo

@@ -106,11 +106,14 @@ class GreedyPathfinder(PathfinderBase):
         self.lista_cerrada = []
         self.camino = None
         self.terminado = False
+        self.iteraciones = 0  # Reiniciar contador de iteraciones
     
     def step(self):
         """Ejecuta una sola iteración del algoritmo Voraz."""
         if not self.lista_abierta or self.terminado:
             return False  # No hay más pasos que dar
+
+        self.iteraciones += 1  # Incrementar contador de iteraciones
 
         # Encontrar el nodo con la menor heurística (f = h)
         nodo_actual = self.lista_abierta[0]

@@ -8,6 +8,7 @@ class PathfinderBase:
     def __init__(self, grid, allow_diagonal=False):
         self.grid = grid
         self.allow_diagonal = allow_diagonal
+        self.iteraciones = 0  # Contador de iteraciones
 
     def get_neighbors_and_costs(self, position):
         """
@@ -54,6 +55,15 @@ class PathfinderBase:
         # Importamos config aquí para evitar dependencias circulares
         import config
         return config.STATE_OBSTACLE
+    
+    # Propiedades para compatibilidad con código existente
+    @property
+    def iterations(self):
+        return self.iteraciones
+    
+    @iterations.setter
+    def iterations(self, valor):
+        self.iteraciones = valor
 
     def find_path(self, start_pos, end_pos):
         """

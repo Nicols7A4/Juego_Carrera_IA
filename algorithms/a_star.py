@@ -98,11 +98,14 @@ class AStarPathfinder(PathfinderBase):
         self.lista_cerrada = []
         self.camino = None
         self.terminado = False
+        self.iteraciones = 0  # Reiniciar contador de iteraciones
     
     def paso(self):
         """Ejecuta una sola iteración del algoritmo A*."""
         if not self.lista_abierta or self.terminado:
             return False # No hay más pasos que dar
+
+        self.iteraciones += 1  # Incrementar contador de iteraciones
 
         # Encontrar el nodo con el menor costo f
         nodo_actual = self.lista_abierta[0]
