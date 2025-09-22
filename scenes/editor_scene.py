@@ -15,6 +15,9 @@ class EditorScene(SceneBase):
         # Estado del mouse
         self.dragging_start = False
         self.dragging_end = False
+        self.painting_obstacles = False  # Para el modo de pintar obstáculos
+        self.paint_mode = None  # 'add' para agregar obstáculos, 'remove' para quitar
+        self.last_painted_cell = None  # Para evitar pintar la misma celda múltiples veces
 
         # Botones
         self.buttons = [
@@ -62,18 +65,45 @@ class EditorScene(SceneBase):
                     elif grid_pos == self.grid.end_pos:
                         self.dragging_end = True
                     else:
+                        # Iniciar modo de pintar obstáculos
+                        self.painting_obstacles = True
+                        self.last_painted_cell = grid_pos
+                        
+                        # Determinar si vamos a agregar o quitar obstáculos
+                        current_state = self.grid.states[grid_pos[0]][grid_pos[1]]
+                        if current_state == config.STATE_OBSTACLE:
+                            self.paint_mode = 'remove'  # La celda es obstáculo, vamos a quitar
+                        else:
+                            self.paint_mode = 'add'     # La celda no es obstáculo, vamos a agregar
+                        
+                        # Aplicar el cambio inicial
                         self.grid.toggle_obstacle(grid_pos)
             
             if event.type == pygame.MOUSEBUTTONUP:
                 if event.button == 1:
                     self.dragging_start = False
                     self.dragging_end = False
+                    self.painting_obstacles = False
+                    self.paint_mode = None
+                    self.last_painted_cell = None
             
             if event.type == pygame.MOUSEMOTION:
                 if self.dragging_start:
                     self.grid.move_point('start', grid_pos)
                 elif self.dragging_end:
                     self.grid.move_point('end', grid_pos)
+                elif self.painting_obstacles and grid_pos != self.last_painted_cell:
+                    # Solo pintar si es una celda diferente y no es punto de inicio/fin
+                    if grid_pos != self.grid.start_pos and grid_pos != self.grid.end_pos:
+                        current_state = self.grid.states[grid_pos[0]][grid_pos[1]]
+                        
+                        # Aplicar el modo de pintura consistente
+                        if self.paint_mode == 'add' and current_state != config.STATE_OBSTACLE:
+                            self.grid.set_obstacle(grid_pos, True)
+                        elif self.paint_mode == 'remove' and current_state == config.STATE_OBSTACLE:
+                            self.grid.set_obstacle(grid_pos, False)
+                        
+                        self.last_painted_cell = grid_pos
 
     def update(self, dt):
         # Timer para el mensaje de guardado
@@ -98,7 +128,7 @@ class EditorScene(SceneBase):
             button.draw(screen)
 
         info_font = pygame.font.SysFont('B612Mono', 24)
-        info_text = info_font.render('Click para poner/quitar obstaculos. Arrastra los puntos.', True, config.WHITE)
+        info_text = info_font.render('Click o arrastra para poner/quitar obstaculos. Arrastra los puntos.', True, config.WHITE)
         screen.blit(info_text, (10, 10))
         
         esc_text = info_font.render('Presiona ESC para volver al menu', True, config.WHITE)

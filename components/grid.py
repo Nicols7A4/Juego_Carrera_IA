@@ -108,6 +108,18 @@ class Grid:
             self.estados[x][y] = config.STATE_OBSTACLE
         else:
             self.estados[x][y] = config.STATE_FREE
+    
+    def establecer_obstaculo(self, posicion_grilla, es_obstaculo):
+        """Establece específicamente si una celda debe ser un obstáculo o no."""
+        x, y = posicion_grilla
+        # No se puede modificar el inicio o fin
+        if self.estados[x][y] == config.STATE_START or self.estados[x][y] == config.STATE_END:
+            return
+        
+        if es_obstaculo:
+            self.estados[x][y] = config.STATE_OBSTACLE
+        else:
+            self.estados[x][y] = config.STATE_FREE
             
     def mover_punto(self, tipo_punto, nueva_pos):
         """Mueve el punto de inicio o fin a una nueva posición."""
@@ -194,6 +206,10 @@ class Grid:
     @property
     def toggle_obstacle(self):
         return self.alternar_obstaculo
+    
+    @property
+    def set_obstacle(self):
+        return self.establecer_obstaculo
     
     @property
     def move_point(self):
