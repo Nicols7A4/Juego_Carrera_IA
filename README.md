@@ -10,6 +10,33 @@ Este proyecto es una aplicación interactiva de visualización y competencia de 
 - **Soporte para movimiento diagonal**
 - **Interfaz en español**
 
+## Funcionamiento de los algoritmos
+
+### Estructura de nodos
+Cada algoritmo utiliza nodos que contienen:
+- **Posición**: Coordenadas (x, y) en la grilla
+- **Padre**: Nodo anterior para reconstruir el camino
+- **Costos**: g (costo real), h (heurística), f (costo total)
+
+### Heurísticas implementadas
+- **Sin diagonal**: Distancia Manhattan (`|x1-x2| + |y1-y2|`)
+- **Con diagonal**: Distancia diagonal (`max(dx,dy) + (√2-1)*min(dx,dy)`)
+
+### Proceso de ejecución
+1. **Inicialización**: `initialize_search(start, end)` prepara listas abiertas/cerradas
+2. **Iteración**: `step()` procesa un nodo y expande vecinos
+3. **Finalización**: `find_path()` ejecuta hasta encontrar el objetivo
+
+### Carga y selección de mapas
+- Los mapas se almacenan en formato JSON en `assets/maps/`
+- `map_manager.load_map_data()` lee obstáculos, inicio y fin
+- `grid.load_map()` aplica los datos a la grilla visual
+
+### Tipos de movimiento
+- **IA**: Calcula camino completo, luego se mueve automáticamente paso a paso
+- **Humano**: Movimiento continuo con teclas presionadas (flechas + QEZC diagonal)
+- **Ambos**: Validación de obstáculos y límites en tiempo real
+
 ## Estructura del proyecto
 - `algorithms/` — Implementaciones de los algoritmos de búsqueda
 - `components/` — Componentes reutilizables (agente, botón, grilla)
@@ -36,7 +63,6 @@ python main.py
 ```
 
 ## Créditos
-- Desarrollado por Adolfo y colaboradores
 - Inspirado en proyectos educativos de visualización de algoritmos
 
 ## Licencia
