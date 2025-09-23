@@ -13,7 +13,8 @@ GRID_HEIGHT = SCREEN_HEIGHT // CELL_SIZE
 # --- COLORES (en formato RGB) ---
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
-GRAY = (40, 40, 40)
+# GRAY = (40, 40, 40)
+GRAY = (100, 100, 100)
 GREEN = (0, 255, 0)
 RED = (255, 0, 0)
 

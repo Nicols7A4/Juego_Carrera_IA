@@ -9,6 +9,9 @@ from algorithms.greedy import GreedyPathfinder
 from algorithms.uniform_cost import UniformCostPathfinder
 from components.button import Button
 
+SP1 = 0.12
+SP2 = 0.080
+
 class RaceScene(SceneBase):
     def __init__(self, game):
         super().__init__(game)
@@ -42,7 +45,7 @@ class RaceScene(SceneBase):
         self.race_time = 0
         
         # --- NUEVO: Variables para movimiento continuo del jugador ---
-        self.player_move_speed = 0.12  # Velocidad de movimiento del jugador (segundos entre movimientos)
+        self.player_move_speed = SP1  # Velocidad de movimiento del jugador (segundos entre movimientos)
         self.player_move_timer = 0
 
     def on_enter(self):
@@ -173,7 +176,7 @@ class RaceScene(SceneBase):
                     moved = True
                 # Movimientos diagonales (si están habilitados)
                 elif self.allow_diagonal:
-                    self.player_move_speed = 0.1
+                    self.player_move_speed = SP2
                     if keys[pygame.K_q]:  # Diagonal arriba-izquierda
                         self.player.move(-1, -1, self.grid)
                         moved = True
