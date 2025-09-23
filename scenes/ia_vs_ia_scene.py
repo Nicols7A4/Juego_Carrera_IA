@@ -166,11 +166,12 @@ class IAvsIAScene(SceneBase):
     
     def _initialize_algorithms(self):
         """Inicializa los pathfinders y agentes para la competencia."""
-        # Crear pathfinders con la configuración de movimiento diagonal
+        # PASO 1: Crear pathfinders con la configuración de movimiento diagonal
+        # Cada algoritmo usa el mismo mapa pero con su propia instancia
         self.pathfinder1 = get_pathfinder(self.algo1_name, self.grid1, self.allow_diagonal)
         self.pathfinder2 = get_pathfinder(self.algo2_name, self.grid2, self.allow_diagonal)
         
-        # Verificar que el mapa tenga inicio y fin válidos
+        # PASO 2: Verificar que el mapa tenga inicio y fin válidos
         if not self.grid1.start_pos or not self.grid1.end_pos:
             self.winner_text = "MAPA INVÁLIDO"
             self.race_finished = True
@@ -178,22 +179,24 @@ class IAvsIAScene(SceneBase):
         
         start = self.grid1.start_pos
         
+        # PASO 3: Ejecutar algoritmos y capturar métricas de rendimiento
+        # PASO 3: Ejecutar algoritmos y capturar métricas de rendimiento
         # Configurar IA 1 (primer algoritmo)
         self.ai1 = Agent(start, (255, 128, 0)) # Naranja
-        self.ai1.path = self.pathfinder1.find_path(start, self.grid1.end_pos)
-        self.ai1_nodes_expanded = len(self.pathfinder1.closed_list)
-        self.ai1_iterations = self.pathfinder1.iterations
+        self.ai1.path = self.pathfinder1.find_path(start, self.grid1.end_pos)  # Ejecutar algoritmo completo
+        self.ai1_nodes_expanded = len(self.pathfinder1.closed_list)  # Nodos explorados
+        self.ai1_iterations = self.pathfinder1.iterations  # Iteraciones realizadas
         
         # Configurar IA 2 (segundo algoritmo)
         self.ai2 = Agent(start, (0, 191, 255)) # Celeste
-        self.ai2.path = self.pathfinder2.find_path(start, self.grid2.end_pos)
-        self.ai2_nodes_expanded = len(self.pathfinder2.closed_list)
-        self.ai2_iterations = self.pathfinder2.iterations
+        self.ai2.path = self.pathfinder2.find_path(start, self.grid2.end_pos)  # Ejecutar algoritmo completo
+        self.ai2_nodes_expanded = len(self.pathfinder2.closed_list)  # Nodos explorados
+        self.ai2_iterations = self.pathfinder2.iterations  # Iteraciones realizadas
 
-        # Control de tiempo para la animación
-        self.move_speed = 0.05
+        # PASO 4: Configurar animación de la carrera visual
+        self.move_speed = 0.05  # Velocidad de animación (20 pasos por segundo)
         self.move_timer = 0
-        self.path_index = 1
+        self.path_index = 1  # Empezar desde el segundo nodo (el primero es la posición inicial)
 
     def on_enter(self):
         """Se ejecuta cuando se entra a la escena."""
@@ -222,7 +225,16 @@ class IAvsIAScene(SceneBase):
         self.ai2_iterations = 0
 
     def update(self, dt):
-        """Actualiza la lógica de la escena."""
+        """
+        Actualizar el estado de la escena en cada frame.
+        
+        PROPÓSITO: Animar el movimiento de ambos agentes simultáneamente
+        FUNCIONAMIENTO:
+        1. Validar que la carrera esté activa y los agentes existan
+        2. Gestionar tiempo de animación para movimiento fluido
+        3. Mover ambos agentes al siguiente nodo de su camino
+        4. Detectar cuando algún agente llega al destino y determinar ganador
+        """
         # Solo actualizar si la carrera ha comenzado y no ha terminado
         if not self.race_started or self.race_finished or self.winner_text:
             return
@@ -231,32 +243,43 @@ class IAvsIAScene(SceneBase):
         if not self.ai1 or not self.ai2:
             return
             
+        # GESTIÓN DE TIEMPO DE ANIMACIÓN
+        # Acumular tiempo transcurrido para controlar velocidad
         self.move_timer += dt
         if self.move_timer >= self.move_speed:
             self.move_timer = 0
             
+            # ANIMACIÓN DEL AGENTE 1 (IA1)
+            # Mover al siguiente nodo si aún hay camino por recorrer
             if self.ai1.path and self.path_index < len(self.ai1.path):
                 self.ai1.position = self.ai1.path[self.path_index]
             
+            # ANIMACIÓN DEL AGENTE 2 (IA2)
+            # Mover al siguiente nodo si aún hay camino por recorrer
             if self.ai2.path and self.path_index < len(self.ai2.path):
                 self.ai2.position = self.ai2.path[self.path_index]
             
+            # Avanzar al siguiente paso de la animación
             self.path_index += 1
 
-            # Comprobar ganador
+            # DETECCIÓN DEL GANADOR
+            # Verificar si algún agente llegó al destino
             p1_finished = self.ai1.position == self.grid1.end_pos
             p2_finished = self.ai2.position == self.grid2.end_pos
             
             if p1_finished or p2_finished:
+                # Marcar carrera como terminada
                 self.ai1.finished = True
                 self.ai2.finished = True
                 self.race_finished = True
                 
+                # Obtener nombres de algoritmos para mostrar
                 algo1_display = get_algorithm_display_name(self.algo1_name)
                 algo2_display = get_algorithm_display_name(self.algo2_name)
                 
+                # DETERMINACIÓN DEL GANADOR CON CRITERIOS DE DESEMPATE
                 if p1_finished and p2_finished:
-                    # Si empatan en pasos, gana el que exploró menos nodos
+                    # Si empatan en pasos, gana el que exploró menos nodos (más eficiente)
                     if self.ai1_nodes_expanded < self.ai2_nodes_expanded:
                         self.winner_text = f"¡GANA {algo1_display} (MÁS EFICIENTE)!"
                     elif self.ai2_nodes_expanded < self.ai1_nodes_expanded:
@@ -269,26 +292,36 @@ class IAvsIAScene(SceneBase):
                     self.winner_text = f"¡GANA {algo2_display}!"
 
     def handle_events(self, events):
-        """Maneja los eventos de la escena."""
+        """
+        Manejar eventos de entrada del usuario.
+        
+        PROPÓSITO: Procesar clics en botones de selección y control
+        EVENTOS MANEJADOS:
+        1. Botones de selección de algoritmos (lado izquierdo y derecho)
+        2. Botón de inicio de carrera
+        3. Botón de toggle para movimiento diagonal
+        4. Tecla ESC para regresar al menú principal
+        """
         for event in events:
+            # TECLA ESC: Regresar al menú principal
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 config.CELL_SIZE = 40 # Restaura el tamaño de celda original
                 self.game.switch_scene('menu')
             
-            # Manejar eventos de botones solo si la carrera no ha comenzado
+            # EVENTOS DE BOTONES (solo si no hay carrera activa)
             if not self.race_started:
-                # Botones de selección de algoritmo 1
+                # Botones de selección de algoritmo 1 (lado izquierdo)
                 for button in self.algo1_buttons:
                     button.handle_event(event)
                 
-                # Botones de selección de algoritmo 2
+                # Botones de selección de algoritmo 2 (lado derecho)
                 for button in self.algo2_buttons:
                     button.handle_event(event)
                 
-                # Botón de comenzar
+                # Botón de inicio de carrera
                 self.start_button.handle_event(event)
                 
-                # Botón de movimiento diagonal
+                # Botón de toggle diagonal
                 self.diagonal_button.handle_event(event)
 
     def draw(self, screen):

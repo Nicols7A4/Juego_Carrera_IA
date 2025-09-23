@@ -10,16 +10,31 @@ from algorithms.greedy import GreedyPathfinder
 from algorithms.uniform_cost import UniformCostPathfinder
 
 class TestingScene(SceneBase):
+    """
+    Escena de testing para visualización paso a paso de algoritmos.
+    
+    PROPÓSITO: Permitir análisis detallado del funcionamiento interno de algoritmos
+    CARACTERÍSTICAS:
+    1. Visualización paso a paso de la exploración de nodos
+    2. Historial navegable (avanzar/retroceder pasos)
+    3. Modo automático con velocidad controlable
+    4. Intercambio entre algoritmos en tiempo real
+    5. Visualización de costos y heurísticas en cada nodo
+    6. Toggle de movimiento diagonal
+    """
     def __init__(self, game):
         super().__init__(game)
+        
+        # CONFIGURACIÓN DE CUADRÍCULA Y FUENTES
         self.grid = Grid()
-        self.font_scores = pygame.font.SysFont('B612Mono', 12)  # Más pequeña
-        self.font_f_score = pygame.font.SysFont('B612Mono', 16, bold=True)  # Más pequeña
+        self.font_scores = pygame.font.SysFont('B612Mono', 12)  # Para mostrar costos en nodos
+        self.font_f_score = pygame.font.SysFont('B612Mono', 16, bold=True)  # Para destacar F-score
 
-        # Estado del movimiento diagonal
+        # CONFIGURACIÓN DE MOVIMIENTO DIAGONAL
         self.allow_diagonal = False
 
-        # 2. Lógica para manejar múltiples algoritmos
+        # CONFIGURACIÓN DE ALGORITMOS DISPONIBLES
+        # Diccionario con todos los algoritmos que se pueden visualizar
         self.algorithms = {
             "A*": AStarPathfinder(self.grid, self.allow_diagonal),
             "Dijkstra": DijkstraPathfinder(self.grid, self.allow_diagonal),
@@ -29,16 +44,18 @@ class TestingScene(SceneBase):
         self.current_algo_name = "A*"
         self.pathfinder = self.algorithms[self.current_algo_name]
 
-        # 1. Variables para el modo automático
+        # SISTEMA DE EJECUCIÓN AUTOMÁTICA
+        # Para observar el algoritmo ejecutándose automáticamente
         self.is_auto_running = False
-        self.auto_step_speed = 0.05 # 0.1 segundos = 10 pasos por segundo
+        self.auto_step_speed = 0.05  # 0.05 segundos = 20 pasos por segundo
         self.auto_step_timer = 0.0
 
-        # --- NUEVO: Historial de Pasos ---
-        self.history = []
-        self.current_step = -1
+        # SISTEMA DE HISTORIAL DE PASOS
+        # Permite navegar hacia adelante y atrás en la ejecución
+        self.history = []        # Lista de estados del algoritmo
+        self.current_step = -1   # Índice del paso actual en el historial
 
-        # Botones de la UI
+        # BOTONES DE CONTROL DE LA INTERFAZ
         self.back_step_button = Button(config.SCREEN_WIDTH - 220, 20, 95, 50, 'Atras', self.step_back)
         self.next_step_button = Button(config.SCREEN_WIDTH - 115, 20, 95, 50, 'Siguiente', self.step_forward)
         self.switch_algo_button = Button(config.SCREEN_WIDTH - 220, 90, 200, 50, f'Algoritmo: {self.current_algo_name}', self.switch_algorithm)
@@ -47,14 +64,27 @@ class TestingScene(SceneBase):
         self.tree_button = Button(config.SCREEN_WIDTH - 220, 280, 200, 40, 'Visualizar Árbol', self.open_tree_visualizer)
 
     def on_enter(self):
-        """Esta función se llamará cada vez que entremos a la escena."""
+        """
+        Inicializar la escena cuando se accede a ella.
+        
+        PROPÓSITO: Configurar estado inicial para visualización de algoritmos
+        ACCIONES:
+        1. Cargar mapa seleccionado
+        2. Reiniciar configuraciones a valores por defecto
+        3. Recrear algoritmos con configuración actual
+        4. Preparar sistema de historial para navegación
+        """
+        # Cargar mapa seleccionado
         self.grid.load_map(self.game.selected_map)
+        
+        # REINICIAR CONFIGURACIONES POR DEFECTO
         self.is_auto_running = False
         self.auto_button.text = "Auto: OFF"
         self.allow_diagonal = False
         self.diagonal_button.text = "Diagonal: OFF"
         
-        # Recrear algoritmos con configuración por defecto
+        # RECREAR ALGORITMOS con configuración actual
+        # Necesario porque el tipo de movimiento afecta las heurísticas
         self.algorithms = {
             "A*": AStarPathfinder(self.grid, self.allow_diagonal),
             "Dijkstra": DijkstraPathfinder(self.grid, self.allow_diagonal),
@@ -63,24 +93,40 @@ class TestingScene(SceneBase):
         }
         self.pathfinder = self.algorithms[self.current_algo_name]
         
+        # INICIALIZAR SISTEMA DE BÚSQUEDA Y HISTORIAL
         self.reset_search()
-        
-        # En RaceScene, recalcula el camino
-        # if self.grid.start_pos and self.grid.end_pos:
-        #     self.path = self.pathfinder.find_path(self.grid.start_pos, self.grid.end_pos)
-        
-        # En TestingScene, reinicia la búsqueda
-        # self.pathfinder.initialize_search(self.grid.start_pos, self.grid.end_pos)
 
     def reset_search(self):
-        """Prepara una nueva búsqueda y guarda el estado inicial."""
+        """
+        Preparar nueva búsqueda y capturar estado inicial.
+        
+        PROPÓSITO: Inicializar algoritmo y sistema de historial
+        FUNCIONAMIENTO:
+        1. Limpiar historial de pasos previos
+        2. Inicializar algoritmo seleccionado
+        3. Capturar estado inicial para navegación
+        """
+        # Limpiar historial de pasos previos
         self.history = []
         self.current_step = 0
+        
+        # Inicializar algoritmo en posiciones de inicio y destino
         self.pathfinder.initialize_search(self.grid.start_pos, self.grid.end_pos)
+        
+        # Capturar estado inicial (antes de explorar cualquier nodo)
         self.history.append(self.get_current_state_snapshot())
 
     def get_current_state_snapshot(self):
-        """Crea una copia profunda del estado actual del pathfinder."""
+        """
+        Crear copia del estado actual del algoritmo.
+        
+        PROPÓSITO: Capturar estado para navegación en historial
+        ESTADO CAPTURADO:
+        1. Lista abierta (nodos por explorar)
+        2. Lista cerrada (nodos ya explorados)
+        3. Camino actual encontrado
+        4. Estado de finalización del algoritmo
+        """
         return {
             "open_list": copy.deepcopy(self.pathfinder.open_list),
             "closed_list": copy.deepcopy(self.pathfinder.closed_list),
@@ -89,21 +135,47 @@ class TestingScene(SceneBase):
         }
 
     def step_forward(self):
-        """Avanza un paso en el algoritmo."""
-        if self.pathfinder.is_finished: return
+        """
+        Avanzar un paso en la ejecución del algoritmo.
+        
+        PROPÓSITO: Ejecutar una iteración del algoritmo y guardar estado
+        FUNCIONAMIENTO:
+        1. Verificar que el algoritmo no haya terminado
+        2. Si navegamos desde historial, limpiar pasos futuros
+        3. Ejecutar un paso del algoritmo
+        4. Capturar nuevo estado en historial
+        """
+        # No avanzar si el algoritmo ya terminó
+        if self.pathfinder.is_finished: 
+            return
 
+        # GESTIÓN DE HISTORIAL
         # Si retrocedimos y ahora avanzamos, borramos el futuro anterior
         if self.current_step < len(self.history) - 1:
             self.history = self.history[:self.current_step + 1]
         
+        # EJECUTAR PASO DEL ALGORITMO
         self.pathfinder.step()
+        
+        # GUARDAR ESTADO ACTUAL
         self.history.append(self.get_current_state_snapshot())
         self.current_step += 1
 
     def step_back(self):
-        """Retrocede un paso en el historial."""
+        """
+        Retroceder un paso en la ejecución del algoritmo.
+        
+        PROPÓSITO: Navegar hacia atrás en el historial de ejecución
+        FUNCIONAMIENTO:
+        1. Verificar que hay pasos previos disponibles
+        2. Decrementar índice de paso actual
+        3. Restaurar estado desde historial
+        """
+        # Solo retroceder si hay pasos previos
         if self.current_step > 0:
             self.current_step -= 1
+            
+            # RESTAURAR ESTADO desde historial
             state = self.history[self.current_step]
             self.pathfinder.open_list = copy.deepcopy(state["open_list"])
             self.pathfinder.closed_list = copy.deepcopy(state["closed_list"])
@@ -111,12 +183,21 @@ class TestingScene(SceneBase):
             self.pathfinder.is_finished = state["is_finished"]
 
     def toggle_diagonal(self):
-        """Activa/desactiva el movimiento diagonal."""
+        """
+        Activar/desactivar movimiento diagonal.
+        
+        PROPÓSITO: Cambiar reglas de movimiento durante análisis
+        RESTRICCIÓN: Solo permitir cambios cuando no hay ejecución automática
+        EFECTO: Recrear algoritmos y reiniciar búsqueda con nuevas reglas
+        """
+        # Solo permitir cambios cuando no hay ejecución automática
         if not self.is_auto_running:
+            # Cambiar estado diagonal
             self.allow_diagonal = not self.allow_diagonal
             self.diagonal_button.text = f'Diagonal: {"ON" if self.allow_diagonal else "OFF"}'
             
-            # Recrear algoritmos con la nueva configuración
+            # RECREAR ALGORITMOS con nueva configuración de movimiento
+            # Esto es necesario porque el tipo de movimiento afecta las heurísticas
             self.algorithms = {
                 "A*": AStarPathfinder(self.grid, self.allow_diagonal),
                 "Dijkstra": DijkstraPathfinder(self.grid, self.allow_diagonal),
@@ -125,59 +206,90 @@ class TestingScene(SceneBase):
             }
             self.pathfinder = self.algorithms[self.current_algo_name]
             
-            # Reiniciar la búsqueda
+            # Reiniciar búsqueda con nuevas reglas
             self.reset_search()
 
     def toggle_auto_mode(self):
-        """Activa o desactiva el modo de ejecución automática."""
+        """
+        Activar/desactivar modo de ejecución automática.
+        
+        PROPÓSITO: Permitir observar algoritmo ejecutándose automáticamente
+        FUNCIONAMIENTO:
+        1. Alternar estado de ejecución automática
+        2. Actualizar texto del botón
+        3. Reiniciar temporizador de pasos automáticos
+        """
         self.is_auto_running = not self.is_auto_running
         self.auto_button.text = f"Auto: {'ON' if self.is_auto_running else 'OFF'}"
-        self.auto_step_timer = 0.0 # Reinicia el timer al cambiar de modo
+        self.auto_step_timer = 0.0  # Reiniciar temporizador al cambiar modo
 
     def switch_algorithm(self):
-        """Cambia entre los algoritmos disponibles."""
+        """
+        Cambiar entre algoritmos disponibles.
+        
+        PROPÓSITO: Permitir comparar diferentes algoritmos en el mismo mapa
+        ALGORITMOS: A*, Dijkstra, Voraz, Costo Uniforme
+        EFECTO: Reiniciar búsqueda con algoritmo seleccionado
+        """
+        # Ciclar al siguiente algoritmo en la lista
         algo_names = list(self.algorithms.keys())
         current_index = algo_names.index(self.current_algo_name)
         next_index = (current_index + 1) % len(algo_names)
         self.current_algo_name = algo_names[next_index]
+        
+        # Actualizar pathfinder y botón
         self.pathfinder = self.algorithms[self.current_algo_name]
         self.switch_algo_button.text = f"Algoritmo: {self.current_algo_name}"
-        # Reinicia la búsqueda con el nuevo algoritmo
-        self.on_enter()
-        self.reset_search()
         
-    def step_algorithm(self):
-        """Avanza un paso solo si la búsqueda no ha terminado."""
-        if not self.pathfinder.is_finished:
-            self.pathfinder.step()
+        # Reiniciar búsqueda con nuevo algoritmo
+        self.reset_search()
 
     def handle_events(self, events):
+        """
+        Manejar eventos de entrada del usuario.
+        
+        PROPÓSITO: Procesar teclas y clics de botones
+        EVENTOS MANEJADOS:
+        1. Tecla ESC - regresar al menú
+        2. Botones de navegación (solo si no hay auto-ejecución)
+        3. Botones de configuración (siempre disponibles)
+        """
         for event in events:
+            # TECLA ESC: Regresar al menú principal
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 self.game.switch_scene('menu')
             
+            # BOTONES DE NAVEGACIÓN: Solo activos si no hay auto-ejecución
             if not self.is_auto_running:
-                self.next_step_button.handle_event(event)
-                self.back_step_button.handle_event(event)
-                self.diagonal_button.handle_event(event)
+                self.next_step_button.handle_event(event)    # Avanzar paso
+                self.back_step_button.handle_event(event)    # Retroceder paso
+                self.diagonal_button.handle_event(event)     # Toggle diagonal
             
-            self.switch_algo_button.handle_event(event)
-            self.auto_button.handle_event(event)
-            self.tree_button.handle_event(event)
+            # BOTONES SIEMPRE ACTIVOS
+            self.switch_algo_button.handle_event(event)      # Cambiar algoritmo
+            self.auto_button.handle_event(event)             # Toggle auto-mode
+            self.tree_button.handle_event(event)             # Visualizador de árbol
 
     def update(self, dt):
-        """El corazón del modo automático."""
+        """
+        Actualizar lógica de ejecución automática.
+        
+        PROPÓSITO: Gestionar progreso automático del algoritmo
+        FUNCIONAMIENTO:
+        1. Acumular tiempo transcurrido
+        2. Si es tiempo de dar paso automático y algoritmo no terminó
+        3. Ejecutar siguiente paso del algoritmo
+        4. Reiniciar temporizador para próximo paso
+        """
+        # MODO AUTOMÁTICO: Solo si está activado y algoritmo no terminó
         if self.is_auto_running and not self.history[self.current_step]["is_finished"]:
+            # Acumular tiempo para controlar velocidad
             self.auto_step_timer += dt
+            
+            # Si es tiempo de dar el siguiente paso
             if self.auto_step_timer >= self.auto_step_speed:
-                self.auto_step_timer = 0
-                self.step_forward()
-                
-        if self.is_auto_running and not self.pathfinder.is_finished:
-            self.auto_step_timer += dt
-            if self.auto_step_timer >= self.auto_step_speed:
-                self.auto_step_timer = 0 # Reinicia el timer
-                self.step_algorithm() # Ejecuta un paso
+                self.auto_step_timer = 0  # Reiniciar temporizador
+                self.step_forward()       # Ejecutar siguiente paso
         
         # Si el algoritmo termina mientras está en modo auto, lo desactivamos
         if self.pathfinder.is_finished and self.is_auto_running:

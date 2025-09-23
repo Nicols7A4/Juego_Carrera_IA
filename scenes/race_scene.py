@@ -13,16 +13,31 @@ SP1 = 0.12
 SP2 = 0.080
 
 class RaceScene(SceneBase):
+    """
+    Escena de carrera entre humano e IA.
+    
+    PROPÓSITO: Permitir al jugador competir directamente contra un algoritmo de IA
+    CARACTERÍSTICAS:
+    1. Control humano con teclas direccionales (movimiento continuo)
+    2. Selección de algoritmo de IA (A*, Dijkstra, Voraz, Costo Uniforme)
+    3. Toggle de movimiento diagonal
+    4. Medición de tiempos de finalización
+    5. Detección de ganador en tiempo real
+    """
     def __init__(self, game):
         super().__init__(game)
+        
+        # CONFIGURACIÓN DE LA CUADRÍCULA Y FUENTES
         self.grid = Grid()
         self.font_winner = pygame.font.SysFont('B612Mono', 80, bold=True)
         self.font_stats = pygame.font.SysFont('B612Mono', 24)
         self.winner_text = ""
         
-        # Estado del movimiento diagonal
+        # CONFIGURACIÓN DE MOVIMIENTO DIAGONAL
         self.allow_diagonal = False
         
+        # CONFIGURACIÓN DE ALGORITMOS DISPONIBLES
+        # Diccionario con todos los algoritmos que la IA puede usar
         self.algorithms = {
             "A*": AStarPathfinder(self.grid, self.allow_diagonal),
             "Dijkstra": DijkstraPathfinder(self.grid, self.allow_diagonal),
@@ -32,43 +47,73 @@ class RaceScene(SceneBase):
         self.current_algo_name = "A*"
         self.pathfinder = self.algorithms[self.current_algo_name]
 
-        # --- NUEVO: Lógica de botones y estado de carrera ---
+        # CONTROL DE ESTADO DE LA CARRERA
         self.race_started = False
+        
+        # BOTONES DE INTERFACE DE USUARIO
         self.switch_algo_button = Button(config.SCREEN_WIDTH - 220, 20, 200, 50, 'IA: A*', self.switch_algorithm)
         self.start_race_button = Button(config.SCREEN_WIDTH - 220, 90, 200, 50, 'Carrera: Comenzar', self.toggle_race_state)
         self.diagonal_button = Button(config.SCREEN_WIDTH - 220, 160, 200, 40, 'Diagonal: OFF', self.toggle_diagonal)
         
-        # --- NUEVO: Variables del temporizador ---
+        # SISTEMA DE MEDICIÓN DE TIEMPO
+        # Para determinar quién llega primero y por cuánto margen
         self.race_start_time = 0
         self.player_finish_time = 0
         self.ai_finish_time = 0
         self.race_time = 0
         
-        # --- NUEVO: Variables para movimiento continuo del jugador ---
+        # SISTEMA DE MOVIMIENTO CONTINUO DEL JUGADOR
+        # Permite mantener presionada una tecla para movimiento fluido
         self.player_move_speed = SP1  # Velocidad de movimiento del jugador (segundos entre movimientos)
         self.player_move_timer = 0
 
     def on_enter(self):
+        """
+        Inicializar la escena cuando se accede a ella.
+        
+        PROPÓSITO: Configurar el estado inicial de la carrera
+        ACCIONES:
+        1. Cargar el mapa seleccionado
+        2. Crear agentes humano e IA en posición inicial
+        3. Configurar velocidades de movimiento
+        4. Inicializar algoritmo seleccionado
+        """
+        # Cargar mapa y obtener posición inicial
         self.grid.load_map(self.game.selected_map)
         start = self.grid.start_pos
         if not start: return
 
+        # CREAR AGENTES
+        # Jugador humano (azul) controlado por teclas
         self.player = Agent(start, (0, 150, 255), is_human=True)
+        # IA (naranja) controlada por algoritmo
         self.ai = Agent(start, (255, 128, 0))
         
-        self.ai_move_speed = 0.15
+        # CONFIGURAR VELOCIDADES DE MOVIMIENTO
+        self.ai_move_speed = 0.15  # IA se mueve cada 0.15 segundos
         self.ai_move_timer = 0
-        self.ai_path_index = 1  # Inicializar el índice del camino de la IA
+        self.ai_path_index = 1  # Índice del próximo nodo en el camino de la IA
         
-        self.switch_algorithm(initial_setup=True) # Configura el estado inicial sin reiniciar
+        # Inicializar algoritmo sin reiniciar carrera
+        self.switch_algorithm(initial_setup=True)
 
     def toggle_diagonal(self):
-        """Activa/desactiva el movimiento diagonal."""
+        """
+        Activar/desactivar movimiento diagonal.
+        
+        PROPÓSITO: Permitir cambiar reglas de movimiento antes de la carrera
+        FUNCIONAMIENTO:
+        1. Solo permitir cambios antes de iniciar carrera
+        2. Recrear todos los algoritmos con nueva configuración
+        3. Recalcular camino de la IA con nuevas reglas
+        """
         if not self.race_started:
+            # Cambiar estado diagonal
             self.allow_diagonal = not self.allow_diagonal
             self.diagonal_button.text = f'Diagonal: {"ON" if self.allow_diagonal else "OFF"}'
             
-            # Recrear algoritmos con la nueva configuración
+            # RECREAR ALGORITMOS con nueva configuración de movimiento
+            # Esto es necesario porque el tipo de movimiento afecta las heurísticas
             self.algorithms = {
                 "A*": AStarPathfinder(self.grid, self.allow_diagonal),
                 "Dijkstra": DijkstraPathfinder(self.grid, self.allow_diagonal),
@@ -77,84 +122,140 @@ class RaceScene(SceneBase):
             }
             self.pathfinder = self.algorithms[self.current_algo_name]
             
-            # Recalcular el camino de la IA
+            # Recalcular camino de la IA con nuevas reglas de movimiento
             if self.grid.start_pos and self.grid.end_pos:
                 self.ai.path = self.pathfinder.find_path(self.grid.start_pos, self.grid.end_pos)
 
     def switch_algorithm(self, initial_setup=False):
+        """
+        Cambiar algoritmo de IA disponible.
+        
+        PROPÓSITO: Permitir al jugador seleccionar contra qué algoritmo competir
+        ALGORITMOS DISPONIBLES: A*, Dijkstra, Voraz, Costo Uniforme
+        FUNCIONAMIENTO: Ciclar entre algoritmos y recalcular camino
+        """
         algo_names = list(self.algorithms.keys())
         current_index = algo_names.index(self.current_algo_name)
+        
+        # Avanzar al siguiente algoritmo (excepto en configuración inicial)
         if not initial_setup:
             next_index = (current_index + 1) % len(algo_names)
             self.current_algo_name = algo_names[next_index]
 
+        # Actualizar pathfinder activo
         self.pathfinder = self.algorithms[self.current_algo_name]
+        # Actualizar texto del botón y calcular camino de la IA
         self.switch_algo_button.text = f"IA: {self.current_algo_name}"
 
+        # Calcular camino óptimo para el algoritmo seleccionado
         if self.grid.start_pos and self.grid.end_pos:
             self.ai.path = self.pathfinder.find_path(self.grid.start_pos, self.grid.end_pos)
 
+        # Reiniciar estado de carrera
         self.reset_race()
         
     def toggle_race_state(self):
-        """Inicia o reinicia la carrera."""
+        """
+        Iniciar o reiniciar la carrera.
+        
+        PROPÓSITO: Controlar el estado de la competencia
+        FUNCIONAMIENTO:
+        1. Si no hay carrera: iniciar carrera y temporizador
+        2. Si hay carrera: reiniciar todo al estado inicial
+        """
         if self.race_started:
+            # REINICIAR CARRERA
             # Si la carrera está en marcha, el botón funciona como "Reiniciar"
             self.reset_race()
         else:
+            # INICIAR CARRERA
             # Si la carrera está pausada, la inicia
             self.race_started = True
             self.start_race_button.text = "Carrera: Reiniciar"
-            # Iniciar el temporizador
+            # Iniciar medición de tiempo
             self.race_start_time = pygame.time.get_ticks() / 1000.0  # Convertir a segundos
 
     def reset_race(self):
-        """Función auxiliar para reiniciar el estado de los agentes."""
+        """
+        Reiniciar el estado de todos los componentes de la carrera.
+        
+        PROPÓSITO: Volver al estado inicial para nueva competencia
+        COMPONENTES REINICIADOS:
+        1. Estado de carrera y botones
+        2. Posiciones de agentes
+        3. Temporizadores y contadores
+        4. Caminos recorridos
+        """
+        # REINICIAR ESTADO DE CARRERA
         self.race_started = False
         self.start_race_button.text = "Carrera: Comenzar"
         self.winner_text = ""
         
-        # Reiniciar temporizadores
+        # REINICIAR TEMPORIZADORES
         self.race_start_time = 0
         self.player_finish_time = 0
         self.ai_finish_time = 0
         self.race_time = 0
         self.player_move_timer = 0  # Reiniciar también el temporizador del jugador
 
+        # REINICIAR POSICIONES DE AGENTES
         if self.grid.start_pos:
             self.ai.position = self.grid.start_pos
             self.player.position = self.grid.start_pos
         
+        # REINICIAR ESTADO DE LA IA
         self.ai.finished = False
         self.ai.steps = 0
-        self.ai_path_index = 1
+        self.ai_path_index = 1  # Empezar desde el segundo nodo del camino
         
+        # REINICIAR ESTADO DEL JUGADOR
         self.player.finished = False
-        self.player.path = [self.grid.start_pos]
+        self.player.path = [self.grid.start_pos]  # Camino recorrido por el jugador
         self.player.steps = 0
 
     def handle_events(self, events):
+        """
+        Manejar eventos de entrada del usuario.
+        
+        PROPÓSITO: Procesar teclas y clics de botones
+        EVENTOS MANEJADOS:
+        1. Tecla ESC - regresar al menú
+        2. Botón de inicio/reinicio de carrera (siempre activo)
+        3. Botones de configuración (solo antes de iniciar carrera)
+        """
         for event in events:
+            # TECLA ESC: Regresar al menú principal
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 self.game.switch_scene('menu')
 
-            # El botón de comenzar/reiniciar siempre debe estar activo
+            # BOTÓN DE CARRERA: Siempre activo (iniciar/reiniciar)
             self.start_race_button.handle_event(event)
 
-            # El botón de cambiar IA solo está activo si la carrera no ha comenzado
-            # (lo que también es cierto cuando la carrera termina)
+            # BOTONES DE CONFIGURACIÓN: Solo activos antes de iniciar carrera
             if not self.race_started:
-                self.switch_algo_button.handle_event(event)
-                self.diagonal_button.handle_event(event)
+                self.switch_algo_button.handle_event(event)  # Cambiar algoritmo de IA
+                self.diagonal_button.handle_event(event)     # Toggle movimiento diagonal
 
     def update(self, dt):
-        """Mueve la IA y comprueba si hay un ganador."""
-        if not self.race_started or self.winner_text: return
+        """
+        Actualizar lógica de la carrera en cada frame.
+        
+        PROPÓSITO: Gestionar movimiento de agentes y detección de ganador
+        COMPONENTES ACTUALIZADOS:
+        1. Tiempo transcurrido de carrera
+        2. Movimiento continuo del jugador (con teclas presionadas)
+        3. Movimiento automático de la IA
+        4. Detección de llegada al destino
+        """
+        # Solo actualizar si la carrera está activa y no hay ganador
+        if not self.race_started or self.winner_text: 
+            return
 
-        # Actualizar tiempo de carrera
+        # ACTUALIZACIÓN DE TIEMPO DE CARRERA
         self.race_time = pygame.time.get_ticks() / 1000.0 - self.race_start_time
 
-        # Manejar movimiento continuo del jugador
+        # SISTEMA DE MOVIMIENTO CONTINUO DEL JUGADOR
+        # Permite mantener presionadas las teclas para movimiento fluido
         if not self.player.finished:
             self.player_move_timer += dt
             if self.player_move_timer >= self.player_move_speed:

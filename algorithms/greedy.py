@@ -3,16 +3,18 @@ import config
 from algorithms.pathfinder_base import PathfinderBase
 
 class Nodo:
-    """Una clase para representar un nodo en la búsqueda Voraz."""
+    """Una clase para representar un nodo en la búsqueda Voraz (Greedy)."""
     def __init__(self, padre=None, posicion=None):
-        self.padre = padre
-        self.posicion = posicion
+        self.padre = padre      # Nodo desde el cual llegamos (para reconstruir camino)
+        self.posicion = posicion # Coordenadas (x, y) del nodo en la grilla
 
-        self.g = 0  # Costo desde el inicio hasta el nodo actual (no se usa en voraz)
-        self.h = 0  # Heurística: costo estimado desde el nodo actual hasta el final
-        self.f = 0  # En voraz, f = h (solo heurística)
+        # Costos en búsqueda Voraz:
+        self.g = 0  # Costo real (se mantiene para reconstrucción, pero NO se usa en decisiones)
+        self.h = 0  # Heurística: estimación al objetivo (ÚNICO criterio de selección)
+        self.f = 0  # En voraz, f = h (solo heurística, ignora costo real)
 
     def __eq__(self, otro):
+        """Dos nodos son iguales si tienen la misma posición."""
         return self.posicion == otro.posicion
     
     # Propiedades para compatibilidad con código existente
@@ -94,15 +96,18 @@ class GreedyPathfinder(PathfinderBase):
         self.terminado = valor
     
     def initialize_search(self, start_pos, end_pos):
-        """Prepara el algoritmo para una nueva búsqueda."""
+        """Prepara el algoritmo Voraz para una nueva búsqueda."""
+        # Crear nodos de inicio y objetivo
         self.nodo_inicio = Nodo(None, start_pos)
         self.nodo_fin = Nodo(None, end_pos)
         
-        # Calcular heurística inicial
+        # Calcular heurística inicial del nodo de inicio
         self.nodo_inicio.h = self.calcular_heuristica(self.nodo_inicio.posicion, end_pos)
-        self.nodo_inicio.f = self.nodo_inicio.h  # En voraz, f = h
+        self.nodo_inicio.f = self.nodo_inicio.h  # En voraz, f = h (sin costo g)
         
+        # Lista abierta: nodos por evaluar (empezamos con el nodo inicial)
         self.lista_abierta = [self.nodo_inicio]
+        # Lista cerrada: nodos ya evaluados
         self.lista_cerrada = []
         self.camino = None
         self.terminado = False
@@ -110,12 +115,34 @@ class GreedyPathfinder(PathfinderBase):
     
     def step(self):
         """Ejecuta una sola iteración del algoritmo Voraz."""
+        # Verificar si hay nodos por evaluar o si ya terminamos
         if not self.lista_abierta or self.terminado:
             return False  # No hay más pasos que dar
 
         self.iteraciones += 1  # Incrementar contador de iteraciones
 
-        # Encontrar el nodo con la menor heurística (f = h)
+        # PASO 1: Encontrar el nodo que parece estar MÁS CERCA del objetivo
+        # Voraz es "codicioso" - siempre elige lo que parece mejor ahora
+        nodo_actual = self.lista_abierta[0]
+        indice_actual = 0
+        for indice, elemento in enumerate(self.lista_abierta):
+            if elemento.f < nodo_actual.f:  # f = h (solo heurística)
+                nodo_actual = elemento
+                indice_actual = indice
+
+        # PASO 2: Mover nodo a lista cerrada
+        self.lista_abierta.pop(indice_actual)
+        self.lista_cerrada.append(nodo_actual)
+
+        # PASO 3: Verificar si hemos llegado al objetivo
+        if nodo_actual == self.nodo_fin:
+            self.camino = self._reconstruir_camino(nodo_actual)
+            self.terminado = True
+            return True
+
+        # PASO 4: Expandir vecinos basándose SOLO en qué tan cerca parecen estar del objetivo
+        self._procesar_vecinos(nodo_actual)
+        return True
         nodo_actual = self.lista_abierta[0]
         indice_actual = 0
         for indice, elemento in enumerate(self.lista_abierta):

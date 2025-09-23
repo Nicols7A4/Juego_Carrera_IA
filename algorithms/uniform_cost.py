@@ -3,16 +3,18 @@ import config
 from algorithms.pathfinder_base import PathfinderBase
 
 class Nodo:
-    """Una clase para representar un nodo en la búsqueda por costo uniforme."""
+    """Una clase para representar un nodo en la búsqueda por Costo Uniforme."""
     def __init__(self, padre=None, posicion=None):
-        self.padre = padre
-        self.posicion = posicion
+        self.padre = padre      # Nodo desde el cual llegamos (para reconstruir camino)
+        self.posicion = posicion # Coordenadas (x, y) del nodo en la grilla
 
-        self.g = 0  # Costo desde el inicio hasta el nodo actual
-        self.h = 0  # No se usa en costo uniforme, pero se mantiene por compatibilidad
-        self.f = 0  # En costo uniforme, f = g (solo costo acumulado)
+        # Costos en Costo Uniforme:
+        self.g = 0  # Costo real acumulado desde el inicio (ÚNICO criterio de selección)
+        self.h = 0  # No se usa heurística (búsqueda ciega como Dijkstra)
+        self.f = 0  # En costo uniforme, f = g (solo costo real, sin estimación)
 
     def __eq__(self, otro):
+        """Dos nodos son iguales si tienen la misma posición."""
         return self.posicion == otro.posicion
     
     # Propiedades para compatibilidad con código existente
@@ -94,28 +96,53 @@ class UniformCostPathfinder(PathfinderBase):
         self.terminado = valor
     
     def initialize_search(self, start_pos, end_pos):
-        """Prepara el algoritmo para una nueva búsqueda."""
+        """Prepara el algoritmo de Costo Uniforme para una nueva búsqueda."""
+        # Crear nodos de inicio y objetivo
         self.nodo_inicio = Nodo(None, start_pos)
         self.nodo_fin = Nodo(None, end_pos)
         
-        # En costo uniforme, inicializamos con costo 0
-        self.nodo_inicio.g = 0
-        self.nodo_inicio.f = 0
+        # En costo uniforme, inicializamos con costo 0 (sin heurística)
+        self.nodo_inicio.g = 0  # Costo desde el inicio = 0
+        self.nodo_inicio.f = 0  # f = g (sin componente heurístico)
         
+        # Lista abierta: nodos por evaluar (empezamos con el nodo inicial)
         self.lista_abierta = [self.nodo_inicio]
+        # Lista cerrada: nodos con costo mínimo ya confirmado
         self.lista_cerrada = []
         self.camino = None
         self.terminado = False
         self.iteraciones = 0  # Reiniciar contador de iteraciones
     
     def step(self):
-        """Ejecuta una sola iteración del algoritmo de costo uniforme."""
+        """Ejecuta una sola iteración del algoritmo de Costo Uniforme."""
+        # Verificar si hay nodos por evaluar o si ya terminamos
         if not self.lista_abierta or self.terminado:
             return False  # No hay más pasos que dar
 
         self.iteraciones += 1  # Incrementar contador de iteraciones
 
-        # Encontrar el nodo con el menor costo g (costo acumulado)
+        # PASO 1: Encontrar el nodo con menor costo acumulado (más barato hasta ahora)
+        # Costo Uniforme busca la solución de menor costo, sin importar el objetivo
+        nodo_actual = self.lista_abierta[0]
+        indice_actual = 0
+        for indice, elemento in enumerate(self.lista_abierta):
+            if elemento.g < nodo_actual.g:  # Comparar solo costo g (sin heurística)
+                nodo_actual = elemento
+                indice_actual = indice
+
+        # PASO 2: Mover nodo a lista cerrada (costo mínimo confirmado)
+        self.lista_abierta.pop(indice_actual)
+        self.lista_cerrada.append(nodo_actual)
+
+        # PASO 3: Verificar si hemos llegado al objetivo
+        if nodo_actual == self.nodo_fin:
+            self.camino = self._reconstruir_camino(nodo_actual)
+            self.terminado = True
+            return True
+
+        # PASO 4: Expandir vecinos priorizando menor costo acumulado
+        self._procesar_vecinos(nodo_actual)
+        return True
         nodo_actual = self.lista_abierta[0]
         indice_actual = 0
         for indice, elemento in enumerate(self.lista_abierta):
