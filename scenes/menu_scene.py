@@ -68,7 +68,7 @@ class MenuScene(SceneBase):
         pantalla.fill(config.GRAY)
         
         # titulo_texto = self.fuente.render('Pathfinding Race AI', True, config.WHITE)
-        titulo_texto = self.fuente.render('RAI: Race AI', True, config.WHITE)
+        titulo_texto = self.fuente.render('PRAI: PathFinding Race AI', True, config.WHITE)
         rectangulo_texto = titulo_texto.get_rect(center=(config.SCREEN_WIDTH / 2, 120))
         pantalla.blit(titulo_texto, rectangulo_texto)
 
