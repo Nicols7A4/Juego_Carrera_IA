@@ -103,7 +103,7 @@ class AStarPathfinder(PathfinderBase):
         self.lista_cerrada = []
         self.camino = None
         self.terminado = False
-        self.iteraciones = 0  # Reiniciar contador de iteraciones
+        self.iteraciones = 0  # Contador de iteraciones
     
     def paso(self):
         """Ejecuta una sola iteración del algoritmo A*."""

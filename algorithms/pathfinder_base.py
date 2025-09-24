@@ -59,7 +59,7 @@ class PathfinderBase:
     def calcular_heuristica(self, pos1, pos2):
         """
         Calcula la heurística apropiada según el tipo de movimiento permitido.
-        - Si permite diagonal: usa distancia diagonal (Chebyshev modificada)
+        - Si permite diagonal: usa distancia diagonal
         - Si no permite diagonal: usa distancia Manhattan
         """
         import math

@@ -143,26 +143,26 @@ class GreedyPathfinder(PathfinderBase):
         # PASO 4: Expandir vecinos basándose SOLO en qué tan cerca parecen estar del objetivo
         self._procesar_vecinos(nodo_actual)
         return True
-        nodo_actual = self.lista_abierta[0]
-        indice_actual = 0
-        for indice, elemento in enumerate(self.lista_abierta):
-            if elemento.f < nodo_actual.f:
-                nodo_actual = elemento
-                indice_actual = indice
+        # nodo_actual = self.lista_abierta[0]
+        # indice_actual = 0
+        # for indice, elemento in enumerate(self.lista_abierta):
+        #     if elemento.f < nodo_actual.f:
+        #         nodo_actual = elemento
+        #         indice_actual = indice
 
-        # Mover a la lista cerrada
-        self.lista_abierta.pop(indice_actual)
-        self.lista_cerrada.append(nodo_actual)
+        # # Mover a la lista cerrada
+        # self.lista_abierta.pop(indice_actual)
+        # self.lista_cerrada.append(nodo_actual)
 
-        # Meta encontrada
-        if nodo_actual == self.nodo_fin:
-            self.camino = self._reconstruir_camino(nodo_actual)
-            self.terminado = True
-            return True
+        # # Meta encontrada
+        # if nodo_actual == self.nodo_fin:
+        #     self.camino = self._reconstruir_camino(nodo_actual)
+        #     self.terminado = True
+        #     return True
 
-        # Generar y procesar vecinos
-        self._procesar_vecinos(nodo_actual)
-        return True
+        # # Generar y procesar vecinos
+        # self._procesar_vecinos(nodo_actual)
+        # return True
     
     def _procesar_vecinos(self, nodo_actual):
         """Procesa los vecinos del nodo actual usando la funcionalidad de la clase base."""
