@@ -70,6 +70,47 @@ class Button:
     @color_text.setter
     def color_text(self, valor):
         self.color_texto = valor
+    
+    # Propiedades adicionales para compatibilidad con el sistema de scroll
+    @property
+    def x(self):
+        return self.rectangulo.x
+    
+    @x.setter
+    def x(self, valor):
+        self.rectangulo.x = valor
+    
+    @property
+    def y(self):
+        return self.rectangulo.y
+    
+    @y.setter
+    def y(self, valor):
+        self.rectangulo.y = valor
+    
+    @property
+    def width(self):
+        return self.rectangulo.width
+    
+    @property
+    def height(self):
+        return self.rectangulo.height
+    
+    @property
+    def action(self):
+        return self.al_hacer_clic
+    
+    @action.setter
+    def action(self, valor):
+        self.al_hacer_clic = valor
+    
+    @property
+    def color(self):
+        return self.color_normal
+    
+    @color.setter
+    def color(self, valor):
+        self.color_normal = valor
 
     def manejar_evento(self, evento):
         """Maneja un evento individual (mouse)."""
