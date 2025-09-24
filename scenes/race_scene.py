@@ -79,7 +79,7 @@ class RaceScene(SceneBase):
         4. Inicializar algoritmo seleccionado
         """
         # Cargar mapa y obtener posición inicial
-        self.grid.load_map(self.game.selected_map)
+        self.grid.load_map(self.game.selected_map) # Carga el JSON como matriz 2D
         start = self.grid.start_pos
         if not start: return
 
